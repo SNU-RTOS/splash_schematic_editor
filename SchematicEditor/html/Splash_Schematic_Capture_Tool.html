@@ -2703,6 +2703,7 @@
           
           $(go.TextBlock,
             {
+              editable: true,
               stretch: go.GraphObject.Horizontal,
               alignment: go.Spot.BottomLeft,
               alignmentFocus: new go.Spot(0,0,0,0),
@@ -2710,6 +2711,10 @@
               margin: 2,
               overflow: go.TextBlock.OverflowEllipsis,
               maxLines: 5,              
+              isMultiline: false,
+              textValidation: function okName(textblock, oldstr, newstr) {
+                                return oldstr === newstr || myDiagram.model.findNodeDataForKey(newstr) === null;
+                              }
             },
             new go.Binding("text", "key").makeTwoWay(),
           ),
@@ -2830,14 +2835,18 @@
     
           $(go.TextBlock,
             {
+              editable: true,
               stretch: go.GraphObject.Horizontal,
               alignment: go.Spot.BottomLeft,
               alignmentFocus: new go.Spot(0,0,0,0),
               textAlign: "center",
               margin: 2,
               overflow: go.TextBlock.OverflowEllipsis,
-              maxLines: 5,
-              
+              maxLines: 5,              
+              isMultiline: false,
+              textValidation: function okName(textblock, oldstr, newstr) {
+                                return oldstr === newstr || myDiagram.model.findNodeDataForKey(newstr) === null;
+                              }
             },
             new go.Binding("text", "key").makeTwoWay(),   
           ),
@@ -3025,14 +3034,18 @@
 
           $(go.TextBlock,
             {
+              editable: true,
               stretch: go.GraphObject.Horizontal,
               alignment: go.Spot.BottomLeft,
               alignmentFocus: new go.Spot(0,0,0,0),
               textAlign: "center",
               margin: 2,
               overflow: go.TextBlock.OverflowEllipsis,
-              maxLines: 5,
-              
+              maxLines: 5,              
+              isMultiline: false,
+              textValidation: function okName(textblock, oldstr, newstr) {
+                                return oldstr === newstr || myDiagram.model.findNodeDataForKey(newstr) === null;
+                              }
             },
             new go.Binding("text", "key").makeTwoWay(),
           ),
@@ -3369,7 +3382,8 @@
               textAlign: "center",
               margin: 2,
               overflow: go.TextBlock.OverflowEllipsis,
-              maxLines: 5,
+              maxLines: 5,              
+              isMultiline: false,
               textValidation: function okName(textblock, oldstr, newstr) {
                                 return oldstr === newstr || myDiagram.model.findNodeDataForKey(newstr) === null;
                               }
