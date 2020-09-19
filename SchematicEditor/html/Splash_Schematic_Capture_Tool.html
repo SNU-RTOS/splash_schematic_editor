@@ -1054,29 +1054,37 @@
             var data = obj.part.data;
             var channel = obj.part.data.Channel ? obj.part.data.Channel : "";
             var msg_type = obj.part.data.MsgType ? obj.part.data.MessageType : "Bool";
+            var rate = obj.part.data.Rate ? obj.part.data.Rate : "";
                 
             var dialog = document.getElementById("channelConfigurationDialog")
             var btn_confirm = document.getElementById("channelConfigurationDialog_btn_confirm");
             var btn_cancel = document.getElementById("channelConfigurationDialog_btn_cancel");
             var select = document.getElementById("channelConfigurationDialog_select");
             var input = document.getElementById("channelConfigurationDialog_input");
+            var input2 = document.getElementById("channelConfigurationDialog_input2");
+
             dialog.showModal();
-            
+            prev_channel = channel;
             input.value = channel;
+            input2.value = rate;
             var change = function(e2) {
                 msg_type = select.value;
             }
             var confirm = function(e2) {
                 channel = input.value;
+                rate = input2.value;
                 console.log(isChannelExisting(channel))
-                if(isChannelExisting(channel)) {
+                if(prev_channel != channel && isChannelExisting(channel)) {
                     alert('Already Exists');
                     return;
                 }
                 myDiagram.model.setDataProperty(data, "Channel", channel);
                 myDiagram.model.setDataProperty(data, "MessageType", msg_type);
+                myDiagram.model.setDataProperty(data, "Rate", rate);
+
                 dialog.close()
                 input.value = ""
+                input2.value = "";
                 select.value = "Bool"
             }
             var cancel = function(e2) {
@@ -1164,13 +1172,13 @@
           $(go.Shape, "Rectangle", 
             { width: 20, height:20, },
             new go.Binding("fill", "", function(data,node) {
-              return isNaN(data.Rate) ? "white" : "gray";
+              return isNaN(data.Rate) || data.Rate == "" ? "white" : "gray";
             }).makeTwoWay(),
             ),
           $(go.Shape, "TriangleRight", 
             { width: 10, height: 10, },
             new go.Binding("fill", "", function(data,node) {
-              return isNaN(data.Rate) ? "black" : "white";
+              return isNaN(data.Rate) || data.Rate == "" ? "black" : "white";
             }).makeTwoWay(),
             ),
           $(go.Shape, "Rectangle", splash_streamPortStyle(),
@@ -4998,7 +5006,7 @@
             "MessageType": {show: isStreamOutputPort, type: "string", readOnly: true },
             "Event": {show: isEventOutputPort, type: "string", readOnly: true},
             "Freshness": {show: hasFreshness, type: "number"},
-            "Rate": {show: hasRate, type: "number"},
+            "Rate": {show: hasRate, type: "number", readOnly: true},
 
 
             "COMMENTS": {},              
@@ -6588,6 +6596,9 @@ function isNotConfiguringFusionRule() {
                 <option>UInt8MultiArray</option>
             </select>
           </label></p>
+          <p><label>Rate(ms):
+            <input type="text" id="channelConfigurationDialog_input2">
+        </label></p> 
       </form>
       <menu style="padding: 0; width: 100%; display: flex; justify-content: center; align-items: center;">
         <button id="channelConfigurationDialog_btn_confirm" value="default">Confirm</button>
