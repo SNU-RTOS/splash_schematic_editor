@@ -1050,36 +1050,67 @@
             }
           });
         }
-        function setChannelName(e, obj) {
-            var channel = "";
-            while(true){
-                channel = prompt("Channel name is","Insert Channel Name");  
-                if(!isChannelExisting(channel)) break;
-                alert("Already Exists");
+        function configureChannel(e, obj) {
+            var data = obj.part.data;
+            var channel = obj.part.data.Channel ? obj.part.data.Channel : "";
+            var msg_type = obj.part.data.MsgType ? obj.part.data.MessageType : "Bool";
+                
+            var dialog = document.getElementById("channelConfigurationDialog")
+            var btn_confirm = document.getElementById("channelConfigurationDialog_btn_confirm");
+            var btn_cancel = document.getElementById("channelConfigurationDialog_btn_cancel");
+            var select = document.getElementById("channelConfigurationDialog_select");
+            var input = document.getElementById("channelConfigurationDialog_input");
+            dialog.showModal();
+            
+            input.value = channel;
+            var change = function(e2) {
+                msg_type = select.value;
             }
-            myDiagram.model.setDataProperty(obj.part.data, "Channel", channel);
+            var confirm = function(e2) {
+                channel = input.value;
+                console.log(isChannelExisting(channel))
+                if(isChannelExisting(channel)) {
+                    alert('Already Exists');
+                    return;
+                }
+                myDiagram.model.setDataProperty(data, "Channel", channel);
+                myDiagram.model.setDataProperty(data, "MessageType", msg_type);
+                dialog.close()
+                input.value = ""
+                select.value = "Bool"
+            }
+            var cancel = function(e2) {
+                dialog.close()
+            }
+            select.addEventListener('change', change);
+            btn_confirm.addEventListener('click', confirm);
+            btn_cancel.addEventListener('click', cancel);
+            dialog.addEventListener('close', function onClose() {
+                select.removeEventListener('change', change);
+                btn_confirm.removeEventListener('click', confirm);
+                btn_cancel.removeEventListener('click', cancel);
+            })
+            
         }
         function isChannelExisting(channel) {
             var flag = false;
             myDiagram.nodes.each(function(node) {
-                if(node.part.data.category === "STREAM_OUTPUT_PORT" && node.part.data.Channel === channel) {
+                if(node.name === "STREAM_OUTPUT_PORT" && node.part.data.Channel === channel) {
                     flag = true;
                     return false;
                 }
             })
-            if(flag) {
-                return true;
-            }
-            return false
+            return flag;
         }
         function setEventName(e, obj) {
-            var event = "";
+            var event = obj.part.data.Event ? obj.part.data.Event : "";
             while(true){
-                event = prompt("Event name is","Insert Event Name");  
+                event = prompt("Event name is", obj.part.data.Event ? obj.part.data.Event : "Insert Event Name");  
                 if(!isEventExisting(event)) break;
                 alert("Already Exists");
             }
-            myDiagram.model.setDataProperty(obj.part.data, "Event", event);
+            if(event)
+                myDiagram.model.setDataProperty(obj.part.data, "Event", event);
         }
         function isEventExisting(event) {
             var flag = false;
@@ -1118,9 +1149,9 @@
               contextMenu:     // define a context menu for each node
                 $("ContextMenu",  // that has one button
                   $("ContextMenuButton",
-                    $(go.TextBlock, {margin: 5, width: 150}, "Set Channel Name"),
+                    $(go.TextBlock, {margin: 5, width: 150}, "Configure Channel"),
                     { 
-                      click: setChannelName 
+                      click: configureChannel
                     },
                     new go.Binding("visible", "", 
                         function(o) {
@@ -4964,6 +4995,7 @@
             // "DataType": {readOnly: isChannel, show: hasDataType},
             "key": { readOnly: true },
             "Channel": {show: isStreamOutputPort, type: "string", readOnly: true },
+            "MessageType": {show: isStreamOutputPort, type: "string", readOnly: true },
             "Event": {show: isEventOutputPort, type: "string", readOnly: true},
             "Freshness": {show: hasFreshness, type: "number"},
             "Rate": {show: hasRate, type: "number"},
@@ -6508,13 +6540,60 @@ function isNotConfiguringFusionRule() {
                 </div>
             </div>
         </div>
-        <div id ="myInfo_modeConfiguration_btn_div">
+        <div style="width: 100%; display: flex; justify-content: center; align-items: center;">
             <button id="myInfo_modeConfiguration_btn_confirm"type="button" onclick="">Confirm</button>
             <button id="myInfo_modeConfiguration_btn_cancel"type="button" onclick="">Cancel</button>
         </div>
     </div>
   </div>
 
+  <dialog id="channelConfigurationDialog" style="width: 300px;">
+      <form method="dialog">
+        <p><label>Channel name:
+            <input type="text" id="channelConfigurationDialog_input">
+        </label></p>  
+        <p><label>Message type: 
+            <select id="channelConfigurationDialog_select">
+                <option>Bool</option>
+                <option>Byte</option>
+                <option>ByteMultiArray</option>
+                <option>Char</option>
+                <option>ColorRGBA</option>
+                <option>Duration</option>
+                <option>Empty</option>
+                <option>Float32</option>
+                <option>Float32MultiArray</option>
+                <option>Float64</option>
+                <option>Float64MultiArray</option>
+                <option>Header</option>
+                <option>Int16</option>
+                <option>Int16MultiArray</option>
+                <option>Int32</option>
+                <option>Int32MultiArray</option>
+                <option>Int64</option>
+                <option>Int64MultiArray</option>
+                <option>Int8</option>
+                <option>Int8MultiArray</option>
+                <option>MultiArrayDimension</option>
+                <option>MultiArrayLayout</option>
+                <option>String</option>
+                <option>Time</option>
+                <option>UInt16</option>
+                <option>UInt16MultiArray</option>
+                <option>UInt32</option>
+                <option>UInt32MultiArray</option>
+                <option>UInt64</option>
+                <option>UInt64MultiArray</option>
+                <option>UInt8</option>
+                <option>UInt8MultiArray</option>
+            </select>
+          </label></p>
+      </form>
+      <menu style="padding: 0; width: 100%; display: flex; justify-content: center; align-items: center;">
+        <button id="channelConfigurationDialog_btn_confirm" value="default">Confirm</button>
+        <button id="channelConfigurationDialog_btn_cancel" value="cancel">Cancel</button>
+      </menu>
+  </dialog>
 
   <div class="container clearfix">
     <div id="OverallPanel" style="width: 100%; position: relative; overflow: hidden;">
