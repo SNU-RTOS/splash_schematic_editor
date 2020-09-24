@@ -3171,7 +3171,64 @@
           grp.findObject("AREA_MODECHANGE_PORT").fill = null;
 
         };
-      
+        function makeVisibleRecursive(child, visible) {
+            child.visible = visible
+            if(child.part.memberParts != undefined) {
+                child.part.memberParts.each(function(member) {
+                    if(visible && child.part.data.category === "factory") {
+                        if(member.part.data.mode === child.part.data.mode_configuration.mode_list[factory_mode_select_map.get(child.key)].name) {
+                            makeVisibleRecursive(member, true);        
+                        }
+                        else {
+                            makeVisibleRecursive(member, false);
+                        }
+                    } 
+                    else {
+                        makeVisibleRecursive(member, visible);
+                    }
+                })
+            }
+        }
+        function selectMode(mode_index, mode, obj) {
+            obj.panel.findObject("MODE_A").findObject("TEXT").stroke = "black"
+            obj.panel.findObject("MODE_A").findObject("TEXT").font = "normal 10pt sans-serif"
+            obj.panel.findObject("MODE_B").findObject("TEXT").stroke = "black"
+            obj.panel.findObject("MODE_B").findObject("TEXT")   .font = "normal 10pt sans-serif"
+            obj.panel.findObject("MODE_C").findObject("TEXT").stroke = "black"
+            obj.panel.findObject("MODE_C").findObject("TEXT").font = "normal 10pt sans-serif"
+            obj.panel.findObject("MODE_D").findObject("TEXT").stroke = "black"
+            obj.panel.findObject("MODE_D").findObject("TEXT").font = "normal 10pt sans-serif"
+            obj.panel.findObject(mode).findObject("TEXT").stroke = "blue"
+            obj.panel.findObject(mode).findObject("TEXT").font = "bold 10pt sans-serif"
+            obj.part.memberParts.each(function(node) {
+                if(node.part.data.category === "modeChangeInputPort") return;
+                makeVisibleRecursive(node, node.part.data.mode === myDiagram.model.findNodeDataForKey(node.part.data.group).mode_configuration.mode_list[mode_index].name);
+            })
+            myDiagram.links.each(function(link) {
+                if(!myDiagram.findNodeForKey(link.part.data.to).visible || !myDiagram.findNodeForKey(link.part.data.from).visible) {
+                    link.visible = false;
+                }
+                else {
+                    link.visible = true;
+                }
+            })
+            myDiagram.nodes.each(function(node) {
+                if(node.part.data.category === "buildUnit") {
+                    var flag = false; 
+                    myDiagram.nodes.each(function(node2) {
+                        if(node2.part.data.buildUnit === node.part.data.key) {
+                            console.log(node2.part.data.key, node2.visible)
+                            if(!node2.visible) {
+                                flag = true;
+                                return false;
+                            }
+                        }  
+                    })
+                    node.visible = !flag;
+                }
+            })
+            
+        }
 
         
         var isIncoming_toFactory = false;
@@ -3503,56 +3560,7 @@
                 alignmentFocus: go.Spot.BottomLeft,
                 click: function(e, obj) { 
                     factory_mode_select_map.set(obj.part.data.key, 0);
-                    obj.findObject("MODE_A").findObject("TEXT").stroke = "blue"
-                    obj.findObject("MODE_A").findObject("TEXT").font = "bold 10pt sans-serif"
-                    obj.panel.findObject("MODE_B").findObject("TEXT").stroke = "black"
-                    obj.panel.findObject("MODE_B").findObject("TEXT").font = "normal 10pt sans-serif"
-                    obj.panel.findObject("MODE_C").findObject("TEXT").stroke = "black"
-                    obj.panel.findObject("MODE_C").findObject("TEXT").font = "normal 10pt sans-serif"
-                    obj.panel.findObject("MODE_D").findObject("TEXT").stroke = "black"
-                    obj.panel.findObject("MODE_D").findObject("TEXT").font = "normal 10pt sans-serif"
-                    myDiagram.nodes.each(function(node) {
-                        if(node.part.data.category === "modeChangeInputPort") return;
-                        if(node.part.data.group === obj.part.data.key) {
-                            if(node.part.data.mode !== obj.part.data.mode_configuration.mode_list[0].name) {
-                                node.visible = false;
-                                node.part.memberParts.each(function(member) {
-                                    member.visible = false;    
-                                    myDiagram.links.each(function(link) {
-                                        if(link.part.data.to === member.key)
-                                            link.visible = false;
-                                        else if(link.part.data.from === member.key)
-                                            link.visible = false;
-                                    })
-                                })
-                            }
-                            else {
-                                node.visible = true;
-                                node.part.memberParts.each(function(member) {
-                                    member.visible = true;    
-                                    myDiagram.links.each(function(link) {
-                                        if(link.part.data.to === member.key)
-                                            link.visible = true;
-                                        else if(link.part.data.from === member.key)
-                                            link.visible = true;
-                                    })
-                                })
-                            }
-                        }
-                    });
-                    myDiagram.nodes.each(function(node) {
-                        if(node.part.data.category ==="buildUnit") {
-                            var flag = false;
-                            myDiagram.nodes.each(function(node2) {
-                                if(node2.part.data.buildUnit === node.part.data.key && !node2.visible) {
-                                    flag = true;
-                                    return false;
-                                }  
-                            })
-                            node.visible = !flag;
-                            return false;
-                        }
-                    })
+                    selectMode(0, "MODE_A", obj);
                 }
             },
             new go.Binding("visible", "", function(o) {
@@ -3607,63 +3615,14 @@
                 })
             )
           ),
-          $(go.Panel, "Spot", 
+          $(go.Panel, "Spot",
             {
                 name: "MODE_B",
                 alignment: new go.Spot(0.3, 0.03, 0, 0),
                 alignmentFocus: go.Spot.BottomLeft,
                 click: function(e, obj) { 
                     factory_mode_select_map.set(obj.part.data.key, 1);
-                    obj.panel.findObject("MODE_A").findObject("TEXT").stroke = "black"
-                    obj.panel.findObject("MODE_A").findObject("TEXT").font = "normal 10pt sans-serif"
-                    obj.findObject("MODE_B").findObject("TEXT").stroke = "blue"
-                    obj.findObject("MODE_B").findObject("TEXT").font = "bold 10pt sans-serif"
-                    obj.panel.findObject("MODE_C").findObject("TEXT").stroke = "black"
-                    obj.panel.findObject("MODE_C").findObject("TEXT").font = "normal 10pt sans-serif"
-                    obj.panel.findObject("MODE_D").findObject("TEXT").stroke = "black"
-                    obj.panel.findObject("MODE_D").findObject("TEXT").font = "normal 10pt sans-serif"
-                    myDiagram.nodes.each(function(node) {
-                        if(node.part.data.category === "modeChangeInputPort") return;
-                        if(node.part.data.group === obj.part.data.key) {
-                            if(node.part.data.mode !== obj.part.data.mode_configuration.mode_list[1].name) {
-                                node.visible = false;
-                                node.part.memberParts.each(function(member) {
-                                    member.visible = false;    
-                                    myDiagram.links.each(function(link) {
-                                        if(link.part.data.to === member.key)
-                                            link.visible = false;
-                                        else if(link.part.data.from === member.key)
-                                            link.visible = false;
-                                    })
-                                })
-                            }
-                            else {
-                                node.visible = true;
-                                node.part.memberParts.each(function(member) {
-                                    member.visible = true;    
-                                    myDiagram.links.each(function(link) {
-                                        if(link.part.data.to === member.key)
-                                            link.visible = true;
-                                        else if(link.part.data.from === member.key)
-                                            link.visible = true;
-                                    })
-                                })
-                            }
-                        }
-                    })
-                    myDiagram.nodes.each(function(node) {
-                        if(node.part.data.category ==="buildUnit") {
-                            var flag = false;
-                            myDiagram.nodes.each(function(node2) {
-                                if(node2.part.data.buildUnit === node.part.data.key && !node2.visible) {
-                                    flag = true;
-                                    return false;
-                                }  
-                            })
-                            node.visible = !flag;
-                            return false;
-                        }
-                    })
+                    selectMode(1, "MODE_B", obj)
                 }
             },
             new go.Binding("alignment", "HEIGHT", function(data, node) {
@@ -3723,56 +3682,7 @@
                 alignmentFocus: go.Spot.BottomLeft,
                 click: function(e, obj) { 
                     factory_mode_select_map.set(obj.part.data.key, 2);
-                    obj.panel.findObject("MODE_A").findObject("TEXT").stroke = "black"
-                    obj.panel.findObject("MODE_A").findObject("TEXT").font = "normal 10pt sans-serif"
-                    obj.panel.findObject("MODE_B").findObject("TEXT").stroke = "black"
-                    obj.panel.findObject("MODE_B").findObject("TEXT").font = "normal 10pt sans-serif"
-                    obj.findObject("MODE_C").findObject("TEXT").stroke = "blue"
-                    obj.findObject("MODE_C").findObject("TEXT").font = "bold 10pt sans-serif"
-                    obj.panel.findObject("MODE_D").findObject("TEXT").stroke = "black"
-                    obj.panel.findObject("MODE_D").findObject("TEXT").font = "normal 10pt sans-serif"
-                    myDiagram.nodes.each(function(node) {
-                        if(node.part.data.category === "modeChangeInputPort") return;
-                        if(node.part.data.group === obj.part.data.key) {
-                            if(node.part.data.mode !== obj.part.data.mode_configuration[2].name) {
-                                node.visible = false;
-                                node.part.memberParts.each(function(member) {
-                                    member.visible = false;    
-                                    myDiagram.links.each(function(link) {
-                                        if(link.part.data.to === member.key)
-                                            link.visible = false;
-                                        else if(link.part.data.from === member.key)
-                                            link.visible = false;
-                                    })
-                                })
-                            }
-                            else {
-                                node.visible = true;
-                                node.part.memberParts.each(function(member) {
-                                    member.visible = true;    
-                                    myDiagram.links.each(function(link) {
-                                        if(link.part.data.to === member.key)
-                                            link.visible = true;
-                                        else if(link.part.data.from === member.key)
-                                            link.visible = true;
-                                    })
-                                })
-                            }
-                        }
-                    })
-                    myDiagram.nodes.each(function(node) {
-                        if(node.part.data.category ==="buildUnit") {
-                            var flag = false;
-                            myDiagram.nodes.each(function(node2) {
-                                if(node2.part.data.buildUnit === node.part.data.key && !node2.visible) {
-                                    flag = true;
-                                    return false;
-                                }  
-                            })
-                            node.visible = !flag;
-                            return false;
-                        }
-                    })
+                    selectMode(2, "MODE_C", obj)
                 }
             },
             new go.Binding("visible", "", function(o) {
@@ -3832,56 +3742,7 @@
                 alignmentFocus: go.Spot.BottomLeft,
                 click: function(e, obj) { 
                     factory_mode_select_map.set(obj.part.data.key, 3);
-                    obj.panel.findObject("MODE_A").findObject("TEXT").stroke = "black"
-                    obj.panel.findObject("MODE_A").findObject("TEXT").font = "normal 10pt sans-serif"
-                    obj.panel.findObject("MODE_B").findObject("TEXT").stroke = "black"
-                    obj.panel.findObject("MODE_B").findObject("TEXT").font = "normal 10pt sans-serif"
-                    obj.panel.findObject("MODE_C").findObject("TEXT").stroke = "black"
-                    obj.panel.findObject("MODE_C").findObject("TEXT").font = "normal 10pt sans-serif"
-                    obj.findObject("MODE_D").findObject("TEXT").stroke = "blue"
-                    obj.findObject("MODE_D").findObject("TEXT").font = "bold 10pt sans-serif"
-                    myDiagram.nodes.each(function(node) {
-                        if(node.part.data.category === "modeChangeInputPort") return;
-                        if(node.part.data.group === obj.part.data.key) {
-                            if(node.part.data.mode !== obj.part.data.mode_configuration[3].name) {
-                                node.visible = false;
-                                node.part.memberParts.each(function(member) {
-                                    member.visible = false;    
-                                    myDiagram.links.each(function(link) {
-                                        if(link.part.data.to === member.key)
-                                            link.visible = false;
-                                        else if(link.part.data.from === member.key)
-                                            link.visible = false;
-                                    })
-                                })
-                            }
-                            else {
-                                node.visible = true;
-                                node.part.memberParts.each(function(member) {
-                                    member.visible = true;    
-                                    myDiagram.links.each(function(link) {
-                                        if(link.part.data.to === member.key)
-                                            link.visible = true;
-                                        else if(link.part.data.from === member.key)
-                                            link.visible = true;
-                                    })
-                                })
-                            }
-                        }
-                    })
-                    myDiagram.nodes.each(function(node) {
-                        if(node.part.data.category ==="buildUnit") {
-                            var flag = false;
-                            myDiagram.nodes.each(function(node2) {
-                                if(node2.part.data.buildUnit === node.part.data.key && !node2.visible) {
-                                    flag = true;
-                                    return false;
-                                }  
-                            })
-                            node.visible = !flag;
-                            return false;
-                        }
-                    })
+                    selectMode(3, "MODE_D", obj)
                 }
             },
             new go.Binding("visible", "", function(o) {
@@ -5656,7 +5517,7 @@
         if (myDiagram.isModified) {
             var save = confirm("Would you like to save changes to " + curFileName + "?");
             if (save) {
-            saveDocument();
+                saveDocument();
             }
         }
         $("#fileOpenMenu").trigger("click");
@@ -6555,57 +6416,56 @@ function isNotConfiguringFusionRule() {
     </div>
   </div>
 
-  <dialog id="channelConfigurationDialog" style="width: 300px;">
-      <form method="dialog">
-        <p><label>Channel name:
-            <input type="text" id="channelConfigurationDialog_input">
-        </label></p>  
-        <p><label>Message type: 
-            <select id="channelConfigurationDialog_select">
-                <option>Bool</option>
-                <option>Byte</option>
-                <option>ByteMultiArray</option>
-                <option>Char</option>
-                <option>ColorRGBA</option>
-                <option>Duration</option>
-                <option>Empty</option>
-                <option>Float32</option>
-                <option>Float32MultiArray</option>
-                <option>Float64</option>
-                <option>Float64MultiArray</option>
-                <option>Header</option>
-                <option>Int16</option>
-                <option>Int16MultiArray</option>
-                <option>Int32</option>
-                <option>Int32MultiArray</option>
-                <option>Int64</option>
-                <option>Int64MultiArray</option>
-                <option>Int8</option>
-                <option>Int8MultiArray</option>
-                <option>MultiArrayDimension</option>
-                <option>MultiArrayLayout</option>
-                <option>String</option>
-                <option>Time</option>
-                <option>UInt16</option>
-                <option>UInt16MultiArray</option>
-                <option>UInt32</option>
-                <option>UInt32MultiArray</option>
-                <option>UInt64</option>
-                <option>UInt64MultiArray</option>
-                <option>UInt8</option>
-                <option>UInt8MultiArray</option>
-            </select>
-          </label></p>
-          <p><label>Rate(ms):
-            <input type="text" id="channelConfigurationDialog_input2">
-        </label></p> 
-      </form>
-      <menu style="padding: 0; width: 100%; display: flex; justify-content: center; align-items: center;">
-        <button id="channelConfigurationDialog_btn_confirm" value="default">Confirm</button>
-        <button id="channelConfigurationDialog_btn_cancel" value="cancel">Cancel</button>
-      </menu>
+  <dialog id="channelConfigurationDialog" style="width: 200px; top:100px">
+    <form method="dialog">
+      <p><label>Channel name:
+          <input type="text" id="channelConfigurationDialog_input" style="width: 100%;" >
+      </label></p>  
+      <p><label>Message type: 
+          <select id="channelConfigurationDialog_select" style="width: 100%;">
+              <option>Bool</option>
+              <option>Byte</option>
+              <option>ByteMultiArray</option>
+              <option>Char</option>
+              <option>ColorRGBA</option>
+              <option>Duration</option>
+              <option>Empty</option>
+              <option>Float32</option>
+              <option>Float32MultiArray</option>
+              <option>Float64</option>
+              <option>Float64MultiArray</option>
+              <option>Header</option>
+              <option>Int16</option>
+              <option>Int16MultiArray</option>
+              <option>Int32</option>
+              <option>Int32MultiArray</option>
+              <option>Int64</option>
+              <option>Int64MultiArray</option>
+              <option>Int8</option>
+              <option>Int8MultiArray</option>
+              <option>MultiArrayDimension</option>
+              <option>MultiArrayLayout</option>
+              <option>String</option>
+              <option>Time</option>
+              <option>UInt16</option>
+              <option>UInt16MultiArray</option>
+              <option>UInt32</option>
+              <option>UInt32MultiArray</option>
+              <option>UInt64</option>
+              <option>UInt64MultiArray</option>
+              <option>UInt8</option>
+              <option>UInt8MultiArray</option>
+          </select>
+        </label></p>
+        <p><label>Rate(ms):
+          <input type="text" id="channelConfigurationDialog_input2" style="width: 100%;">
+      </label></p> 
+    </form>
+    <menu style="padding: 0; width: 100%; display: flex; justify-content: center; align-items: center;">
+      <button id="channelConfigurationDialog_btn_confirm" value="default">Confirm</button>
+      <button id="channelConfigurationDialog_btn_cancel" value="cancel">Cancel</button>
+    </menu>
   </dialog>
-
   <div class="container clearfix">
     <div id="OverallPanel" style="width: 100%; position: relative; overflow: hidden;">
 
