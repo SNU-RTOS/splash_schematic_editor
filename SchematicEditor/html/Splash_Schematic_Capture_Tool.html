@@ -229,12 +229,12 @@
                     finishDrop(e, null);
                 },
                 
-                
+                PartCreated: function(e) {
+                    console.log("part created", e)
+                },
                 ExternalObjectsDropped: function(e) {
-                
                     console.log("ExternalObjectsDropped()");
-                    
-                    e.subject.each( function(part) 
+                    e.subject.each( function(part)
                         {
                             externalDroppedObjectName = part.name;
                             internalSelectedObjectName = "NONE";
@@ -429,17 +429,14 @@
         // relocatePart() is relocate stream input/output port of source/sink component when there textBlock is added.
         function relocatePort(part) {
             console.log("relocatePort()");
-
             var it_memberParts;
             var memeber_port;
-            console.log(part.name)
+            console.log(part.name, part.key)
             if(part.name == "SOURCE") {
                 it_memberParts = part.memberParts;
                 memeber_port = it_memberParts.first()
 
                 memeber_port.location = new go.Point(part.location.x+30, part.location.y-part.actualBounds.height/2);
-                
-
             } else if(part.name == "SINK") {
                 it_memberParts = part.memberParts;
                 memeber_port = it_memberParts.first()
@@ -628,6 +625,11 @@
         }
       
         myDiagram.model.makeUniqueKeyFunction = setKeyUUID;
+        myDiagram.model.copyNodeDataFunction = function(data, model) {
+            var shallowCopiedObject = JSON.parse(JSON.stringify(data))
+            shallowCopiedObject.key = setKeyUUID(model, shallowCopiedObject);
+            return shallowCopiedObject;
+        };
         
         myDiagram.grid =
             $(go.Panel, "Grid",
@@ -1191,6 +1193,7 @@
               maxLines: 1,
               isMultiline: false,
               textValidation: function okName(textblock, oldstr, newstr) {
+
                                 return oldstr === newstr || !isChannelExisting(newstr);
                               }
             },
@@ -2599,10 +2602,23 @@
               maxLines: 5,
               isMultiline: false,
               textValidation: function okName(textblock, oldstr, newstr) {
-                                return oldstr === newstr || myDiagram.model.findNodeDataForKey(newstr) === null;
+
+                                var flag = oldstr === newstr;
+                                var flag2 = true;
+                                myDiagram.nodes.each(node => {
+                                    if(node.key === newstr) {
+                                        flag2 = false;
+                                        return;
+                                    }
+                                })
+                                return flag || flag2;
                               }
             },
-            new go.Binding("text", "key").makeTwoWay(),
+            new go.Binding("text", "key", function(text, obj ) {
+                return text;
+            }).makeTwoWay(function(text, obj, e) {
+                return text;
+            }),
           ),
           
           $(go.Shape, "Rectangle",
@@ -2760,7 +2776,11 @@
                                 return oldstr === newstr || myDiagram.model.findNodeDataForKey(newstr) === null;
                               }
             },
-            new go.Binding("text", "key").makeTwoWay(),
+            new go.Binding("text", "key", function(text ,obj) {
+                return text
+            }).makeTwoWay(function(text, obj, e) {
+                return text
+            }),
           ),
           
           $(go.Shape, "Rectangle",
@@ -4576,7 +4596,6 @@
         { category: "fusionOperator", "isGroup": true },
         { category: "factory", "isGroup": true },
       ];
-  
 
     //   {
                  
@@ -4667,7 +4686,25 @@
     });
 
 
-
+    function findNodeForKey(key){
+        var flag = true;
+        myDiagram.nodes.each(node => {
+            if(node.key === key) {
+                flag = false;
+                return;
+            }
+        })
+        return flag;
+    }
+    function findNumOfTheCategory(category) {
+        var count = 0;
+        myDiagram.nodes.each(node => {
+            if(node.part.data.category === category) {
+                count = count + 1;
+            }
+        })
+        return count;
+    }
     //
     function setKeyUUID(model, data) {
         console.log("NEW setKeyUUID");
@@ -4675,31 +4712,35 @@
         var name_count = 1;
         // var new_key = createKeyUUID();
         if(data.category === "processingComponent") {
+            name_count = findNumOfTheCategory(data.category);
             do {
                 new_name = "processing_component_" + name_count;
                 name_count = name_count + 1;
-                console.log(new_name);
             }while(model.findNodeDataForKey(new_name) !== null);
         }
         else if(data.category === "sourceComponent") {
+            name_count = findNumOfTheCategory(data.category);
             do {
                 new_name = "source_component_" + name_count;
                 name_count = name_count + 1;
             }while(model.findNodeDataForKey(new_name) !== null);
         }
         else if(data.category === "sinkComponent") {
+            name_count = findNumOfTheCategory(data.category);
             do {
                 new_name = "sink_component_" + name_count;
                 name_count = name_count + 1;
             }while(model.findNodeDataForKey(new_name) !== null);
         }
         else if(data.category === "fusionOperator") {
+            name_count = findNumOfTheCategory(data.category);
             do {
                 new_name = "fusion_operator_" + name_count;
                 name_count = name_count + 1;
             }while(model.findNodeDataForKey(new_name) !== null);
         }
         else if(data.category === "factory") {
+            name_count = findNumOfTheCategory(data.category);
             do {
                 new_name = "factory_" + name_count;
                 name_count = name_count + 1;
@@ -4709,30 +4750,35 @@
             new_name = data.text;
         }
         else if(data.category === "streamPort") {
+            name_count = findNumOfTheCategory(data.category);
             do {
                 new_name = "stream_port_" + name_count;
                 name_count = name_count + 1;
             }while(model.findNodeDataForKey(new_name) !== null);
         }
         else if(data.category === "eventInputPort") {
+            name_count = findNumOfTheCategory(data.category);
             do {
                 new_name = "event_input_port_" + name_count;
                 name_count = name_count + 1;
             }while(model.findNodeDataForKey(new_name) !== null);
         }
         else if(data.category === "eventOutputPort") {
+            name_count = findNumOfTheCategory(data.category);
             do {
                 new_name = "event_output_port_" + name_count;
                 name_count = name_count + 1;
             }while(model.findNodeDataForKey(new_name) !== null);
         }
         else if(data.category === "modeChangeInputPort") {
+            name_count = findNumOfTheCategory(data.category);
             do {
                 new_name = "modechange_input_port_" + name_count;
                 name_count = name_count + 1;
             }while(model.findNodeDataForKey(new_name) !== null);
         }
         else if(data.category === "modeChangeOutputPort") {
+            name_count = findNumOfTheCategory(data.category);
             do {
                 new_name = "modechange_output_port_" + name_count;
                 name_count = name_count + 1;
@@ -4755,7 +4801,46 @@
     //     return "";
     //   }
     }
-    
+    function setKeyUUIDPalette(model, data) {
+        console.log("NEW setKeyUUIDPalette");
+        var new_name = ""
+        var name_count = 0;
+        // var new_key = createKeyUUID();
+        if(data.category === "processingComponent") {
+            new_name = "processing_component_" + name_count;
+        }
+        else if(data.category === "sourceComponent") {
+            new_name = "source_component_" + name_count;
+        }
+        else if(data.category === "sinkComponent") {
+            new_name = "sink_component_" + name_count;
+        }
+        else if(data.category === "fusionOperator") {
+            new_name = "fusion_operator_" + name_count;
+        }
+        else if(data.category === "factory") {
+            new_name = "factory_" + name_count;
+        }
+        else if(data.category === "buildUnit") {
+            new_name = data.text;
+        }
+        else if(data.category === "streamPort") {
+            new_name = "stream_port_" + name_count;
+        }
+        else if(data.category === "eventInputPort") {
+            new_name = "event_input_port_" + name_count;
+        }
+        else if(data.category === "eventOutputPort") {
+            new_name = "event_output_port_" + name_count;
+        }
+        else if(data.category === "modeChangeInputPort") {
+            new_name = "modechange_input_port_" + name_count;
+        }
+        else if(data.category === "modeChangeOutputPort") {
+            new_name = "modechange_output_port_" + name_count;
+        }
+        return new_name;
+    }
     // inspector code
     {
       function getCurrentObjectName() {
